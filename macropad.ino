@@ -3,6 +3,15 @@
 #include <Adafruit_NeoPixel.h>
 #include <RotaryEncoder.h>
 #include <Wire.h>
+#include "Adafruit_seesaw.h"
+#include <seesaw_neopixel.h>
+
+#define  DEFAULT_I2C_ADDR 0x30
+#define  ANALOGIN   18
+#define  NEOPIXELOUT 14
+
+Adafruit_seesaw seesaw;
+seesaw_NeoPixel pixles = seesaw_NeoPixel(4, NEOPIXELOUT, NEO_GRB + NEO_KHZ800);
 
 // Create the neopixel strip with the built in definitions NUM_NEOPIXEL and PIN_NEOPIXEL
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_NEOPIXEL, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
@@ -53,16 +62,6 @@ void setup() {
   display.setTextWrap(false);
   display.setTextColor(SH110X_WHITE, SH110X_BLACK); // white text, black background
 
-  // Enable speaker
-  pinMode(PIN_SPEAKER_ENABLE, OUTPUT);
-  digitalWrite(PIN_SPEAKER_ENABLE, HIGH);
-  // Play some tones
-  pinMode(PIN_SPEAKER, OUTPUT);
-  digitalWrite(PIN_SPEAKER, LOW);
-  tone(PIN_SPEAKER, 988, 100);  // tone1 - B5
-  delay(100);
-  tone(PIN_SPEAKER, 1319, 200); // tone2 - E6
-  delay(200);
 }
 
 uint8_t j = 0;
@@ -74,7 +73,7 @@ void loop() {
   display.println("* Adafruit Macropad *");
   
   encoder.tick();          // check the encoder
-  int newPos = encoder.getPosition();
+  int newPos = encoder.getPosition() * -1;
   if (encoder_pos != newPos) {
     Serial.print("Encoder:");
     Serial.print(newPos);
@@ -85,6 +84,10 @@ void loop() {
   display.setCursor(0, 8);
   display.print("Rotary encoder: ");
   display.print(encoder_pos);
+
+  // read the potentiometer
+  uint16_t slide_val = seesaw.analogRead(ANALOGIN);
+  Serial.println(slide_val);
 
   // Scanning takes a while so we don't do it all the time
   if ((j & 0x3F) == 0) {
@@ -117,6 +120,7 @@ void loop() {
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
     pixels.setBrightness(180);     // bright!
+    //här ska byte mellan profiler utföras
   } else {
     pixels.setBrightness(20);
   }
@@ -133,6 +137,7 @@ void loop() {
       display.setCursor(((i-1) % 3)*48, 32 + ((i-1)/3)*8);
       display.print("KEY");
       display.print(i);
+      //kalla på funktion för själva macron här??
     }
   }
 
