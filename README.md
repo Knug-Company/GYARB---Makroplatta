@@ -1,2 +1,2 @@
 # GYARB
-du vet vad detta är
+Kod och loggbok
