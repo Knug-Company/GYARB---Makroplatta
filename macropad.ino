@@ -12,18 +12,16 @@
 
 Adafruit_seesaw seesaw;
 seesaw_NeoPixel pixles = seesaw_NeoPixel(4, NEOPIXELOUT, NEO_GRB + NEO_KHZ800);
-
 // Create the neopixel strip with the built in definitions NUM_NEOPIXEL and PIN_NEOPIXEL
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_NEOPIXEL, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
-
 // Create the OLED display
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &SPI1, OLED_DC, OLED_RST, OLED_CS);
-
 // Create the rotary encoder
 RotaryEncoder encoder(PIN_ROTA, PIN_ROTB, RotaryEncoder::LatchMode::FOUR3);
 void checkPosition() {  encoder.tick(); } // just call tick() to check the state.
 // our encoder position state
 int encoder_pos = 0;
+int enc_rotation = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -70,20 +68,21 @@ bool i2c_found[128] = {false};
 void loop() {
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println("* Adafruit Macropad *");
+  display.println("*Hej jag heter Joel*");
   
   encoder.tick();          // check the encoder
-  int newPos = encoder.getPosition() * -1;
-  if (encoder_pos != newPos) {
+  int newPos = encoder.getPosition() * -1;  //flipping to clockwise
+  if (encoder_pos != newPos) {//if position has changed
     Serial.print("Encoder:");
     Serial.print(newPos);
     Serial.print(" Direction:");
     Serial.println((int)(encoder.getDirection()));
     encoder_pos = newPos;
+    enc_rotation = (20 + (encoder_pos%20)) % 20;
   }
   display.setCursor(0, 8);
-  display.print("Rotary encoder: ");
-  display.print(encoder_pos);
+  display.print("Rot enc: ");
+  display.print(enc_rotation);
 
   // read the potentiometer
   uint16_t slide_val = seesaw.analogRead(ANALOGIN);
@@ -104,7 +103,7 @@ void loop() {
     }
     Serial.println();
   }
-  
+ /*
   display.setCursor(0, 16);
   display.print("I2C Scan: ");
   for (uint8_t address=0; address <= 0x7F; address++) {
@@ -113,7 +112,7 @@ void loop() {
     display.print(address, HEX);
     display.print(" ");
   }
-  
+  */ 
   // check encoder press
   display.setCursor(0, 24);
   if (!digitalRead(PIN_SWITCH)) {
