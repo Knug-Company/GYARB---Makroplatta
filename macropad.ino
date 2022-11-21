@@ -94,7 +94,7 @@ void loop() {
   uint16_t slide_val = seesaw.analogRead(ANALOGIN);
   Serial.println(slide_val);
   display.setCursor(0, 16);
-  display.print("Slide val: ");
+  display.print("Slider: ");
   display.print(slide_val);
 
   // Scanning takes a while so we don't do it all the time
@@ -139,7 +139,12 @@ void loop() {
   
   for (int i=1; i<=12; i++) {
     if (!digitalRead(i)) { // switch pressed!
-      Serial.print("Switch "); Serial.println(i);
+      switch(profilenum){
+        case 1 : //dictionary(i)
+        //etc
+      }
+
+
       pixels.setPixelColor(i-1, 0xFFFFFF);  // make white
       // move the text into a 3x4 grid
       display.setCursor(((i-1) % 3)*48, 32 + ((i-1)/3)*8);
