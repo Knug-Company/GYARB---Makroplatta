@@ -22,6 +22,7 @@ void checkPosition() {  encoder.tick(); } // just call tick() to check the state
 // our encoder position state
 int encoder_pos = 0;
 int enc_rotation = 0;
+int profilenum = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -55,6 +56,11 @@ void setup() {
   // We will use I2C for scanning the Stemma QT port
   Wire.begin();
 
+  if (!seesaw.begin(DEFAULT_I2C_ADDR)) {
+    Serial.println(F("seesaw not found!"));
+    while(1) delay(10);
+  }
+
   // text display tests
   display.setTextSize(1);
   display.setTextWrap(false);
@@ -87,6 +93,9 @@ void loop() {
   // read the potentiometer
   uint16_t slide_val = seesaw.analogRead(ANALOGIN);
   Serial.println(slide_val);
+  display.setCursor(0, 16);
+  display.print("Slide val: ");
+  display.print(slide_val);
 
   // Scanning takes a while so we don't do it all the time
   if ((j & 0x3F) == 0) {
@@ -119,7 +128,7 @@ void loop() {
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
     pixels.setBrightness(180);     // bright!
-    //här ska byte mellan profiler utföras
+    profilenum = enc_rotation //byter profil
   } else {
     pixels.setBrightness(20);
   }
@@ -141,7 +150,7 @@ void loop() {
   }
 
   // show neopixels, incredment swirl
-  pixels.show();
+  //pixels.show();
   j++;
 
   // display oled
