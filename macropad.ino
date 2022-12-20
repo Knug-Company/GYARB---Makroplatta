@@ -19,9 +19,9 @@ Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &SPI1, OLED_DC, OLED_RST, O
 // Create the rotary encoder
 RotaryEncoder encoder(PIN_ROTA, PIN_ROTB, RotaryEncoder::LatchMode::FOUR3);
 void checkPosition() {  encoder.tick(); } // just call tick() to check the state.
-// our encoder position state
-int encoder_pos = 0;
-int enc_rotation = 0;
+
+int encoder_pos = 0;  // The state of the encoder position
+int enc_rotation = 0; // The state of the encoder rotation
 
 void setup() {
   Serial.begin(115200);
@@ -62,13 +62,13 @@ void setup() {
 
 }
 
-uint8_t j = 0;
-bool i2c_found[128] = {false};
+uint8_t j = 0; // 
+bool i2c_found[128] = {false}; //
 
 void loop() {
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println("*Hej jag heter Joel*");
+  display.println("*Välj program*");
   
   encoder.tick();          // check the encoder
   int newPos = encoder.getPosition() * -1;  //flipping to clockwise
@@ -113,9 +113,8 @@ void loop() {
     display.print(" ");
   }
   */ 
-  // check encoder press
   display.setCursor(0, 24);
-  if (!digitalRead(PIN_SWITCH)) {
+  if (!digitalRead(PIN_SWITCH)) { // check encoder press
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
     pixels.setBrightness(180);     // bright!
