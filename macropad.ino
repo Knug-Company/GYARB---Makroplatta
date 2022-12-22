@@ -1,3 +1,4 @@
+
 //detta är vår vackra kod, vårt mästerverk, vår skapelse
 #include <Adafruit_SH110X.h>
 #include <Adafruit_NeoPixel.h>
@@ -72,6 +73,7 @@ void settings(int x){
   }
 }
 
+
 void setup() {
   Serial.begin(115200);
   //while (!Serial) { delay(10); }     // wait till serial port is opened
@@ -117,13 +119,16 @@ void setup() {
 
 }
 
-uint8_t j = 0;
-bool i2c_found[128] = {false};
+uint8_t j = 0; // 
+bool i2c_found[128] = {false}; //
 
 void loop() {
   display.clearDisplay();
   display.setCursor(0,0);
+
   display.println("  GYARB Makroplatta");
+
+
   
   encoder.tick();          // check the encoder
   int newPos = encoder.getPosition() * -1;  //flipping to clockwise
@@ -184,9 +189,11 @@ void loop() {
     display.print(" ");
   }
   */ 
+
   // check encoder press
   display.setCursor(0, 16);
   if (!digitalRead(PIN_SWITCH)) {
+
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
     pixels.setBrightness(180);     // bright!
