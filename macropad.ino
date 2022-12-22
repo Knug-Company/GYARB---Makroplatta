@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include "Adafruit_seesaw.h"
 #include <seesaw_neopixel.h>
+#include <Keyboard.h>
 
 #define  DEFAULT_I2C_ADDR 0x30
 #define  ANALOGIN   18
@@ -19,10 +20,57 @@ Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &SPI1, OLED_DC, OLED_RST, O
 // Create the rotary encoder
 RotaryEncoder encoder(PIN_ROTA, PIN_ROTB, RotaryEncoder::LatchMode::FOUR3);
 void checkPosition() {  encoder.tick(); } // just call tick() to check the state.
+
 // our encoder position state
 int encoder_pos = 0;
 int enc_rotation = 0;
 int profilenum = 0;
+int RGBstate = true;
+int RGBswirl = true;
+
+void playFusion(int x){
+  Keyboard.begin();
+  switch(x){
+    case 1: Keyboard.write('e'); break;
+    case 2: Keyboard.write('d'); break;
+    case 3: Keyboard.write('f'); break;
+    case 4: Keyboard.write('r'); break;
+    case 5: Keyboard.write('c'); break;
+    case 6: Keyboard.press(0x81); Keyboard.press('f'); Keyboard.releaseAll();break;
+    case 7: 
+    case 10:Keyboard.press(0x81); Keyboard.press('x'); Keyboard.releaseAll();break;     //custom, parameters
+    case 11: Keyboard.press(0x83); Keyboard.press('z'); Keyboard.releaseAll();break;    //undo
+    case 12:Keyboard.press(0x81); Keyboard.press('i'); Keyboard.releaseAll();break;     //custom shortcut, interference
+  
+  }
+  Keyboard.end();
+}
+
+void skrivaText(int x){
+  Keyboard.begin();
+  switch(x){
+    case 1: Keyboard.write("a"); break;
+    case 2: Keyboard.press(0x81); Keyboard.press(0x66); Keyboard.releaseAll();break;
+    case 3: Keyboard.write(0x63); break;
+    case 4: Keyboard.write(0x64); break;
+    case 5: Keyboard.write(0x65); break;
+    case 6: Keyboard.write(0x66); break;
+    case 7: Keyboard.write(0x67); break;
+    case 8: Keyboard.write(0x68); break;
+    case 9: Keyboard.write(0x69); break;
+    case 10: Keyboard.write(0x70); break;
+    case 11: Keyboard.write(0x71); break;
+    case 12: Keyboard.write(0x72); break;
+  }
+  Keyboard.end();
+}
+
+void settings(int x){
+  switch(x){
+    case 1: RGBstate = !RGBstate; break;
+    case 2: RGBswirl = !RGBswirl; break;
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -39,6 +87,7 @@ void setup() {
   // Start OLED
   display.begin(0, true); // we dont use the i2c address but we will reset!
   display.display();
+
   
   // set all mechanical keys to inputs
   for (uint8_t i=0; i<=12; i++) {
@@ -74,7 +123,7 @@ bool i2c_found[128] = {false};
 void loop() {
   display.clearDisplay();
   display.setCursor(0,0);
-  display.println("*Hej jag heter Joel*");
+  display.println("  GYARB Makroplatta");
   
   encoder.tick();          // check the encoder
   int newPos = encoder.getPosition() * -1;  //flipping to clockwise
@@ -85,16 +134,29 @@ void loop() {
     Serial.println((int)(encoder.getDirection()));
     encoder_pos = newPos;
     enc_rotation = (20 + (encoder_pos%20)) % 20;
+
   }
   display.setCursor(0, 8);
   display.print("Rot enc: ");
-  display.print(enc_rotation);
+  switch(enc_rotation/2){
+    case 0: display.print("Profile 1");break;
+    case 1: display.print("Profile 2");break;
+    case 2: display.print("Profile 3");break;
+    case 3: display.print("Profile 4");break;
+    case 4: display.print("Profile 5");break;
+    case 5: display.print("Profile 6");break;
+    case 6: display.print("Profile 7");break;
+    case 7: display.print("Profile 8");break;
+    case 8: display.print("Profile 9");break;
+    case 9: display.print("Profile 10");break;
+  }
 
   // read the potentiometer
   uint16_t slide_val = seesaw.analogRead(ANALOGIN);
   Serial.println(slide_val);
-  display.setCursor(0, 16);
+  display.setCursor(0, 24);
   display.print("Slider: ");
+  slide_val = map(slide_val, 0, 1023, 0, 100);
   display.print(slide_val);
 
   // Scanning takes a while so we don't do it all the time
@@ -123,39 +185,43 @@ void loop() {
   }
   */ 
   // check encoder press
-  display.setCursor(0, 24);
+  display.setCursor(0, 16);
   if (!digitalRead(PIN_SWITCH)) {
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
     pixels.setBrightness(180);     // bright!
-    profilenum = enc_rotation //byter profil
+    profilenum = enc_rotation/2; //byter profil
   } else {
     pixels.setBrightness(20);
   }
 
-  for(int i=0; i< pixels.numPixels(); i++) {
-    pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+  if(RGBstate == 1 && RGBswirl == 1){
+    for(int i=0; i< pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+  }
   }
   
   for (int i=1; i<=12; i++) {
     if (!digitalRead(i)) { // switch pressed!
       switch(profilenum){
-        case 1 : //dictionary(i)
-        //etc
+        case 1 : display.print("knapp 1"); playFusion(i); break;
+        case 2 : display.print("knapp 2"); settings(i); break;
+        case 3 : display.print("knapp 3"); skrivaText(i); break;
+        //etc 10 ggr
       }
 
+    
 
       pixels.setPixelColor(i-1, 0xFFFFFF);  // make white
       // move the text into a 3x4 grid
       display.setCursor(((i-1) % 3)*48, 32 + ((i-1)/3)*8);
       display.print("KEY");
       display.print(i);
-      //kalla på funktion för själva macron här??
     }
   }
 
   // show neopixels, incredment swirl
-  //pixels.show();
+  pixels.show();
   j++;
 
   // display oled
