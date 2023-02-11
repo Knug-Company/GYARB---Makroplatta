@@ -25,9 +25,13 @@ void checkPosition() {  encoder.tick(); } // just call tick() to check the state
 // our encoder position state
 int encoder_pos = 0;
 int enc_rotation = 0;
-int profilenum = 0;
-int RGBstate = true;
+int profilenum = 0; //state variable current profile
+int RGBstate = true;//state variable RGB
 int RGBswirl = true;
+int Clr = 0;
+int brightness = 0;
+uint16_t slide_val = 0;
+uint16_t lastSlideValue = 0;
 
 void playFusion(int x){
   Keyboard.begin();
@@ -47,10 +51,29 @@ void playFusion(int x){
   Keyboard.end();
 }
 
+void VScode(int x){
+  Keyboard.begin();
+  switch(x){
+    case 1: Keyboard.press(0x83); Keyboard.press(0x81); Keyboard.press('p'); Keyboard.releaseAll(); break; //CMD+SHIFT+P
+    case 2: Keyboard.press(0x82); Keyboard.press(0x83); Keyboard.press('u'); Keyboard.releaseAll(); break;//upload
+    case 3: Keyboard.press(0x82); Keyboard.press(0x83); Keyboard.press('r'); Keyboard.releaseAll(); break;
+    case 4: Keyboard.write(0x64); break;
+    case 5: Keyboard.write(0x65); break;
+    case 6: Keyboard.write(0x66); break;
+    case 7: Keyboard.write(0x67); break;
+    case 8: Keyboard.write(0x68); break;
+    case 9: Keyboard.write(0x69); break;
+    case 10: Keyboard.write(0x70); break;
+    case 11: Keyboard.write(0x71); break;
+    case 12: Keyboard.write(0x72); break;
+  }
+  Keyboard.end();
+}
+
 void skrivaText(int x){
   Keyboard.begin();
   switch(x){
-    case 1: Keyboard.write("a"); break;
+    case 1: Keyboard.write('a'); break;
     case 2: Keyboard.press(0x81); Keyboard.press(0x66); Keyboard.releaseAll();break;
     case 3: Keyboard.write(0x63); break;
     case 4: Keyboard.write(0x64); break;
@@ -70,9 +93,33 @@ void settings(int x){
   switch(x){
     case 1: RGBstate = !RGBstate; break;
     case 2: RGBswirl = !RGBswirl; break;
+    case 3: Clr++; break;
   }
 }
 
+void volume(int x, int y){
+  Keyboard.begin()
+  if (x - y >= 6.25){//volume increase
+    Keyboard.write('F12');
+    lastSlideValue = slide_val;
+  }
+  if (x - y <= -6.25){//volume decrease
+    Keyboard.write('F11');
+    lastSlideValue = slide_val;
+  }
+  Keyboard.end();
+}
+
+void docSize(int x, int y){
+  Keyboard.begin()
+  if (x - y >= 10){//volume increase
+    Keyboard.write('F12');
+  }
+  if (x - y <= -10){//volume decrease
+    Keyboard.write('F11');
+  }
+  Keyboard.end();
+}
 
 void setup() {
   Serial.begin(115200);
@@ -142,27 +189,33 @@ void loop() {
 
   }
   display.setCursor(0, 8);
-  display.print("Rot enc: ");
+  display.print("Profile: ");
   switch(enc_rotation/2){
-    case 0: display.print("Profile 1");break;
-    case 1: display.print("Profile 2");break;
-    case 2: display.print("Profile 3");break;
-    case 3: display.print("Profile 4");break;
-    case 4: display.print("Profile 5");break;
-    case 5: display.print("Profile 6");break;
-    case 6: display.print("Profile 7");break;
-    case 7: display.print("Profile 8");break;
-    case 8: display.print("Profile 9");break;
-    case 9: display.print("Profile 10");break;
+    case 0: display.print("Settings");break;
+    case 1: display.print("Fusion360");break;
+    case 2: display.print("VSCode");break;
+    case 3: display.print("text editor");break;
+    case 4: display.print("Profile 4");break;
+    case 5: display.print("Profile 5");break;
+    case 6: display.print("Profile 6");break;
+    case 7: display.print("Profile 7");break;
+    case 8: display.print("Profile 8");break;
+    case 9: display.print("Profile 9");break;
+
   }
 
   // read the potentiometer
-  uint16_t slide_val = seesaw.analogRead(ANALOGIN);
-  Serial.println(slide_val);
+  slide_val = seesaw.analogRead(ANALOGIN);
   display.setCursor(0, 24);
   display.print("Slider: ");
   slide_val = map(slide_val, 0, 1023, 0, 100);
   display.print(slide_val);
+
+  switch(profilenum){
+    case 3: docSize(slide_val, lastSlideValue); break;//increase or decrease zoom on document
+    case 10: brightness = map(slide_val, 0, 100, 0, 255); break;//increase brightness of LEDs
+    default: volume(slide_val, lastSlideValue); break;//increase or decrease volume
+  }
 
   // Scanning takes a while so we don't do it all the time
   if ((j & 0x3F) == 0) {
@@ -179,16 +232,6 @@ void loop() {
     }
     Serial.println();
   }
- /*
-  display.setCursor(0, 16);
-  display.print("I2C Scan: ");
-  for (uint8_t address=0; address <= 0x7F; address++) {
-    if (!i2c_found[address]) continue;
-    display.print("0x");
-    display.print(address, HEX);
-    display.print(" ");
-  }
-  */ 
 
   // check encoder press
   display.setCursor(0, 16);
@@ -196,28 +239,52 @@ void loop() {
 
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
-    pixels.setBrightness(180);     // bright!
     profilenum = enc_rotation/2; //byter profil
-  } else {
-    pixels.setBrightness(20);
   }
+  pixels.setBrightness(brightness);
 
-  if(RGBstate == 1 && RGBswirl == 1){
-    for(int i=0; i< pixels.numPixels(); i++) {
-      pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
-  }
-  }
+  Serial.println("state" + String(RGBstate));
+  Serial.println("swirl" + String(RGBswirl));
+  Serial.println("color" + String(Clr));
+
+  if(RGBstate){
+    if(RGBswirl == true){//rgb cycle active
+      for(int i=0; i< pixels.numPixels(); i++) {
+        pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+      }
+      j++;
+    
+    }
+    if(!RGBswirl){
+      for(int i=0; i< pixels.numPixels(); i++) {
+        switch(Clr){
+          case 1: pixels.setPixelColor(i, 0xFF0000); break; //red
+          case 2: pixels.setPixelColor(i, 0xff8000); break; //orange
+          case 3: pixels.setPixelColor(i, 0xFFFF00); break; //yellow
+          case 4: pixels.setPixelColor(i, 0x80FF00); break; //chartruese
+          case 5: pixels.setPixelColor(i, 0x00FF00); break; //green
+          case 6: pixels.setPixelColor(i, 0x00FF80); break; //spring green
+          case 7: pixels.setPixelColor(i, 0x00FFFF); break; //cyan
+          case 8: pixels.setPixelColor(i, 0x0080FF); break; //dodger blue
+          case 9: pixels.setPixelColor(i, 0x0000FF); break; //blue
+          case 10: pixels.setPixelColor(i, 0x8000FF); break;//purple
+          case 11: pixels.setPixelColor(i, 0xFF00FF); break;//violet
+          case 12: pixels.setPixelColor(i, 0xFF0080); break;//magenta
+        }
+      }
+    }
+  } 
   
   for (int i=1; i<=12; i++) {
     if (!digitalRead(i)) { // switch pressed!
-      switch(profilenum){
-        case 1 : display.print("knapp 1"); playFusion(i); break;
-        case 2 : display.print("knapp 2"); settings(i); break;
-        case 3 : display.print("knapp 3"); skrivaText(i); break;
+      Serial.println(profilenum);
+      switch(profilenum){//depending on profile
+        case 1 : playFusion(i); break;
+        case 2 : VScode(i); break;
+        case 3 : skrivaText(i); break;
+        case 10 : settings(i); break;
         //etc 10 ggr
       }
-
-    
 
       pixels.setPixelColor(i-1, 0xFFFFFF);  // make white
       // move the text into a 3x4 grid
@@ -225,11 +292,13 @@ void loop() {
       display.print("KEY");
       display.print(i);
     }
+    while(!digitalRead(i)){}
   }
 
   // show neopixels, incredment swirl
   pixels.show();
-  j++;
+
+
 
   // display oled
   display.display();
