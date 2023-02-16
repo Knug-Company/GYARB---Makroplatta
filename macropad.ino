@@ -8,6 +8,7 @@
 #include <seesaw_neopixel.h>
 #include <Keyboard.h>
 
+
 #define  DEFAULT_I2C_ADDR 0x30
 #define  ANALOGIN   18
 #define  NEOPIXELOUT 14
@@ -33,30 +34,34 @@ int brightness = 100;
 uint16_t slide_val = 0;
 uint16_t lastSlideValue = 0;
 
+uint8_t j = 0; 
+bool i2c_found[128] = {false}; 
+
 void playFusion(int x){
   Keyboard.begin();
   switch(x){
-    case 1: Keyboard.write('e'); break;
-    case 2: Keyboard.write('d'); break;
-    case 3: Keyboard.write('f'); break;
-    case 4: Keyboard.write('r'); break;
-    case 5: Keyboard.write('c'); break;
-    case 6: Keyboard.press(0x81); Keyboard.press('f'); Keyboard.releaseAll();break;
+    case 1: Keyboard.write('e'); break;//extrude
+    case 2: Keyboard.write('d'); break;//dimension
+    case 3: Keyboard.write('f'); break;//fillet 2d
+    case 4: Keyboard.write('r'); break;//rectangle
+    case 5: Keyboard.write('c'); break;//circle
+    case 6: Keyboard.press(0x81); delay(10); Keyboard.press('f'); delay(10);break;//fillet 3d
     case 7: 
-    case 10:Keyboard.press(0x81); Keyboard.press('x'); Keyboard.releaseAll();break;     //custom, parameters
-    case 11: Keyboard.press(0x83); Keyboard.press('z'); Keyboard.releaseAll();break;    //undo
-    case 12:Keyboard.press(0x81); Keyboard.press('i'); Keyboard.releaseAll();break;     //custom shortcut, interference
+    case 10:Keyboard.press(0x81); delay(10); Keyboard.press('x'); delay(10);break;     //custom, parameters
+    case 11: Keyboard.press(0x83); delay(10); Keyboard.press('z'); delay(10);break;    //undo
+    case 12:Keyboard.press(0x81); delay(10); Keyboard.press('i'); delay(10);break;     //custom shortcut, interference
   
   }
+  Keyboard.releaseAll();
   Keyboard.end();
 }
 
 void VScode(int x){
   Keyboard.begin();
   switch(x){
-    case 1: Keyboard.press(0x83); Keyboard.press(0x81); Keyboard.press('p'); Keyboard.releaseAll(); break; //CMD+SHIFT+P
-    case 2: Keyboard.press(0x82); Keyboard.press(0x83); Keyboard.press('u'); Keyboard.releaseAll(); break;//upload
-    case 3: Keyboard.press(0x82); Keyboard.press(0x83); Keyboard.press('r'); Keyboard.releaseAll(); break;
+    case 1: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10); Keyboard.press('p'); delay(10); Keyboard.releaseAll(); break; //search
+    case 2: Keyboard.press(0x82); delay(10); Keyboard.press(0x83); delay(10); Keyboard.press('u'); delay(10); Keyboard.releaseAll(); break;//upload
+    case 3: Keyboard.press(0x82); delay(10); Keyboard.press(0x83); delay(10); Keyboard.press('r'); delay(10); Keyboard.releaseAll(); break;
     case 4: Keyboard.write(0x64); break;
     case 5: Keyboard.write(0x65); break;
     case 6: Keyboard.write(0x66); break;
@@ -70,47 +75,51 @@ void VScode(int x){
   Keyboard.end();
 }
 
-void skrivaText(int x){
+void skrivaText(int x){//för google docs
   Keyboard.begin();
   switch(x){
-    case 1: Keyboard.write('a'); break;
-    case 2: Keyboard.press(0x81); Keyboard.press(0x66); Keyboard.releaseAll();break;
-    case 3: Keyboard.write(0x63); break;
-    case 4: Keyboard.write(0x64); break;
-    case 5: Keyboard.write(0x65); break;
-    case 6: Keyboard.write(0x66); break;
-    case 7: Keyboard.write(0x67); break;
-    case 8: Keyboard.write(0x68); break;
-    case 9: Keyboard.write(0x69); break;
-    case 10: Keyboard.write(0x70); break;
-    case 11: Keyboard.write(0x71); break;
-    case 12: Keyboard.write(0x72); break;
+    case 1: Keyboard.press(0x83); delay(10); Keyboard.press('c'); delay(10); break;//copy
+    case 2: Keyboard.press(0x83); delay(10); Keyboard.press('v'); delay(10); break;//paste
+    case 3: Keyboard.press(0x83); delay(10); Keyboard.press('a'); delay(10); break;//mark all
+    case 4: Keyboard.press(0x83); delay(10); Keyboard.press('.'); delay(10); break;//superscript
+    case 5: Keyboard.press(0x83); delay(10); Keyboard.press(','); delay(10); break;//subscript
+    case 6: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10);Keyboard.press('x'); delay(10); break;//strikethrough
+    case 7: Keyboard.press(0x83); delay(10); Keyboard.press(0x82); delay(10);Keyboard.press('1'); delay(10); break;//heading 1
+    case 8: Keyboard.press(0x83); delay(10); Keyboard.press(0x82); delay(10);Keyboard.press('2'); delay(10); break;//heading 2
+    case 9: Keyboard.press(0x83); delay(10); Keyboard.press(0x82); delay(10);Keyboard.press('3'); delay(10); break;//heading 3
+    case 10:Keyboard.press(0x83); delay(10); Keyboard.press('k'); delay(10);break;//link
+    case 11:Keyboard.press(0x83); delay(10); Keyboard.press(0x82); delay(10); Keyboard.press('m'); delay(10); break;//comment
+    case 12:Keyboard.press(0x80); delay(10); Keyboard.press(0x82); delay(10);Keyboard.press('i'); delay(10); Keyboard.write('e'); break;//equation
   }
+  Keyboard.releaseAll();
   Keyboard.end();
 }
 
 void settings(int x){
   switch(x){
-    case 1: RGBstate = !RGBstate; break;
-    case 2: RGBswirl = !RGBswirl; break;
+    case 1: RGBstate = !RGBstate; break;//RGB on off
+    case 2: RGBswirl = !RGBswirl; break;//RGB swirl 
     case 3: Clr++ ;Clr = Clr % 12; break;
   }
 }
 
+
 void volume(int x, int y){
+  /*
   Keyboard.begin();
   if (x - y >= 6.25){//volume increase
-    Keyboard.write(0xCD);
+    Keyboard.write(0xCD);rrd
     lastSlideValue = slide_val;
   }
   if (x - y <= -6.25){//volume decrease
     Keyboard.write(0xCC);
     lastSlideValue = slide_val;
   }
-  Keyboard.end();
+  Keyboard.end();*/
 }
 
 void docSize(int x, int y){
+  /*
   Keyboard.begin();
   if (x - y >= 10){//document zoom increase
     Keyboard.press(0x83);
@@ -122,7 +131,7 @@ void docSize(int x, int y){
     Keyboard.press('-');
     Keyboard.releaseAll();
   }
-  Keyboard.end();
+  Keyboard.end();*/
 }
 
 void setup() {
@@ -133,8 +142,10 @@ void setup() {
   Serial.println("Adafruit Macropad with RP2040");
 
   // start pixels!
-  pixels.begin();
+  pixels.begin();//macropad pixels
+  pixles.begin();//slider pixels
   pixels.show(); // Initialize all pixels to 'off'
+  pixles.show();
 
   // Start OLED
   display.begin(0, true); // we dont use the i2c address but we will reset!
@@ -169,9 +180,6 @@ void setup() {
 
 }
 
-uint8_t j = 0; // 
-bool i2c_found[128] = {false}; //
-
 void loop() {
   display.clearDisplay();
   display.setCursor(0,0);
@@ -188,23 +196,17 @@ void loop() {
     Serial.print(" Direction:");
     Serial.println((int)(encoder.getDirection()));
     encoder_pos = newPos;
-    enc_rotation = (20 + (encoder_pos%20)) % 20;
+    enc_rotation = (5 + (encoder_pos%5)) % 5;
 
   }
   display.setCursor(0, 8);
   display.print("Profile: ");
-  switch(enc_rotation/2){
+  switch(enc_rotation){
     case 0: display.print("Settings");break;
     case 1: display.print("Fusion360");break;
     case 2: display.print("VSCode");break;
     case 3: display.print("text editor");break;
-    case 4: display.print("Profile 4");break;
-    case 5: display.print("Profile 5");break;
-    case 6: display.print("Profile 6");break;
-    case 7: display.print("Profile 7");break;
-    case 8: display.print("Profile 8");break;
-    case 9: display.print("Profile 9");break;
-
+    case 4: display.print("Placeholder");break;
   }
 
   // read the potentiometer
@@ -217,23 +219,7 @@ void loop() {
   switch(profilenum){
     case 0: brightness = map(slide_val, 0, 100, 0, 255); break;//increase brightness of LEDs
     case 3: docSize(slide_val, lastSlideValue); break;//increase or decrease zoom on document
-    default: volume(slide_val, lastSlideValue); break;//increase or decrease volume
-  }
-
-  // Scanning takes a while so we don't do it all the time
-  if ((j & 0x3F) == 0) {
-    Serial.println("Scanning I2C: ");
-    Serial.print("Found I2C address 0x");
-    for (uint8_t address = 0; address <= 0x7F; address++) {
-      Wire.beginTransmission(address);
-      i2c_found[address] = (Wire.endTransmission () == 0);
-      if (i2c_found[address]) {
-        Serial.print("0x");
-        Serial.print(address, HEX);
-        Serial.print(", ");
-      }
-    }
-    Serial.println();
+    default: brightness = map(slide_val, 0, 100, 0, 255); break;
   }
 
   // check encoder press
@@ -242,11 +228,12 @@ void loop() {
 
     Serial.println("Encoder button");
     display.print("Encoder pressed ");
-    profilenum = enc_rotation/2; //byter profil
+    profilenum = enc_rotation; //byter profil
   }
 
   if(RGBstate == 1){
     pixels.setBrightness(brightness);
+    pixles.setBrightness(brightness);
     Serial.println("state" + String(RGBstate));
     if(RGBswirl == 1){//rgb cycle active
       Serial.println("swirl" + String(RGBswirl));
@@ -254,7 +241,7 @@ void loop() {
         pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
       }
       for(int i; i<pixles.numPixels();i++){//slider neopixels
-        pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+        pixles.setPixelColor(i, Wheel(((i * 256 / pixles.numPixels()) + j) & 255));
       }
       j++;
     
@@ -277,10 +264,27 @@ void loop() {
           case 11: pixels.setPixelColor(i, 0xFF0080); break;//magenta
         }
       }
+      for(int i=0; i< pixles.numPixels(); i++) {
+        switch(Clr){
+          case 0: pixles.setPixelColor(i, 0xFF0000); break; //red
+          case 1: pixles.setPixelColor(i, 0xff8000); break; //orange
+          case 2: pixles.setPixelColor(i, 0xFFFF00); break; //yellow
+          case 3: pixles.setPixelColor(i, 0x80FF00); break; //chartruese
+          case 4: pixles.setPixelColor(i, 0x00FF00); break; //green
+          case 5: pixles.setPixelColor(i, 0x00FF80); break; //spring green
+          case 6: pixles.setPixelColor(i, 0x00FFFF); break; //cyan
+          case 7: pixles.setPixelColor(i, 0x0080FF); break; //dodger blue
+          case 8: pixles.setPixelColor(i, 0x0000FF); break; //blue
+          case 9: pixles.setPixelColor(i, 0x8000FF); break;//purple
+          case 10: pixles.setPixelColor(i, 0xFF00FF); break;//violet
+          case 11: pixles.setPixelColor(i, 0xFF0080); break;//magenta
+        }
+      } 
     }
-  } 
+  }
   else{
     pixels.setBrightness(0);
+    pixles.setBrightness(0);
   }
   
   for (int i=1; i<=12; i++) {
@@ -305,16 +309,13 @@ void loop() {
 
   // show neopixels, incredment swirl
   pixels.show();
+  pixles.show();
 
 
 
   // display oled
   display.display();
 }
-
-
-
-
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
