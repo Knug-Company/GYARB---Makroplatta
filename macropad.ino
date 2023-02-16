@@ -29,7 +29,7 @@ int profilenum = 0; //state variable current profile
 int RGBstate = true;//state variable RGB
 int RGBswirl = true;
 int Clr = 0;
-int brightness = 0;
+int brightness = 100;
 uint16_t slide_val = 0;
 uint16_t lastSlideValue = 0;
 
@@ -93,30 +93,34 @@ void settings(int x){
   switch(x){
     case 1: RGBstate = !RGBstate; break;
     case 2: RGBswirl = !RGBswirl; break;
-    case 3: Clr++; break;
+    case 3: Clr++ ;Clr = Clr % 12; break;
   }
 }
 
 void volume(int x, int y){
-  Keyboard.begin()
+  Keyboard.begin();
   if (x - y >= 6.25){//volume increase
-    Keyboard.write('F12');
+    Keyboard.write(0xCD);
     lastSlideValue = slide_val;
   }
   if (x - y <= -6.25){//volume decrease
-    Keyboard.write('F11');
+    Keyboard.write(0xCC);
     lastSlideValue = slide_val;
   }
   Keyboard.end();
 }
 
 void docSize(int x, int y){
-  Keyboard.begin()
-  if (x - y >= 10){//volume increase
-    Keyboard.write('F12');
+  Keyboard.begin();
+  if (x - y >= 10){//document zoom increase
+    Keyboard.press(0x83);
+    Keyboard.press('+');
+    Keyboard.releaseAll();
   }
-  if (x - y <= -10){//volume decrease
-    Keyboard.write('F11');
+  if (x - y <= -10){//document zoom decrease
+    Keyboard.press(0x83);
+    Keyboard.press('-');
+    Keyboard.releaseAll();
   }
   Keyboard.end();
 }
@@ -130,7 +134,6 @@ void setup() {
 
   // start pixels!
   pixels.begin();
-  pixels.setBrightness(255);
   pixels.show(); // Initialize all pixels to 'off'
 
   // Start OLED
@@ -212,8 +215,8 @@ void loop() {
   display.print(slide_val);
 
   switch(profilenum){
+    case 0: brightness = map(slide_val, 0, 100, 0, 255); break;//increase brightness of LEDs
     case 3: docSize(slide_val, lastSlideValue); break;//increase or decrease zoom on document
-    case 10: brightness = map(slide_val, 0, 100, 0, 255); break;//increase brightness of LEDs
     default: volume(slide_val, lastSlideValue); break;//increase or decrease volume
   }
 
@@ -241,48 +244,53 @@ void loop() {
     display.print("Encoder pressed ");
     profilenum = enc_rotation/2; //byter profil
   }
-  pixels.setBrightness(brightness);
 
-  Serial.println("state" + String(RGBstate));
-  Serial.println("swirl" + String(RGBswirl));
-  Serial.println("color" + String(Clr));
-
-  if(RGBstate){
-    if(RGBswirl == true){//rgb cycle active
-      for(int i=0; i< pixels.numPixels(); i++) {
+  if(RGBstate == 1){
+    pixels.setBrightness(brightness);
+    Serial.println("state" + String(RGBstate));
+    if(RGBswirl == 1){//rgb cycle active
+      Serial.println("swirl" + String(RGBswirl));
+      for(int i=0; i< pixels.numPixels(); i++) {//macropad neopixels
+        pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+      }
+      for(int i; i<pixles.numPixels();i++){//slider neopixels
         pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
       }
       j++;
     
     }
-    if(!RGBswirl){
+    if(RGBswirl == 0){
+      Serial.println("color" + String(Clr));
       for(int i=0; i< pixels.numPixels(); i++) {
         switch(Clr){
-          case 1: pixels.setPixelColor(i, 0xFF0000); break; //red
-          case 2: pixels.setPixelColor(i, 0xff8000); break; //orange
-          case 3: pixels.setPixelColor(i, 0xFFFF00); break; //yellow
-          case 4: pixels.setPixelColor(i, 0x80FF00); break; //chartruese
-          case 5: pixels.setPixelColor(i, 0x00FF00); break; //green
-          case 6: pixels.setPixelColor(i, 0x00FF80); break; //spring green
-          case 7: pixels.setPixelColor(i, 0x00FFFF); break; //cyan
-          case 8: pixels.setPixelColor(i, 0x0080FF); break; //dodger blue
-          case 9: pixels.setPixelColor(i, 0x0000FF); break; //blue
-          case 10: pixels.setPixelColor(i, 0x8000FF); break;//purple
-          case 11: pixels.setPixelColor(i, 0xFF00FF); break;//violet
-          case 12: pixels.setPixelColor(i, 0xFF0080); break;//magenta
+          case 0: pixels.setPixelColor(i, 0xFF0000); break; //red
+          case 1: pixels.setPixelColor(i, 0xff8000); break; //orange
+          case 2: pixels.setPixelColor(i, 0xFFFF00); break; //yellow
+          case 3: pixels.setPixelColor(i, 0x80FF00); break; //chartruese
+          case 4: pixels.setPixelColor(i, 0x00FF00); break; //green
+          case 5: pixels.setPixelColor(i, 0x00FF80); break; //spring green
+          case 6: pixels.setPixelColor(i, 0x00FFFF); break; //cyan
+          case 7: pixels.setPixelColor(i, 0x0080FF); break; //dodger blue
+          case 8: pixels.setPixelColor(i, 0x0000FF); break; //blue
+          case 9: pixels.setPixelColor(i, 0x8000FF); break;//purple
+          case 10: pixels.setPixelColor(i, 0xFF00FF); break;//violet
+          case 11: pixels.setPixelColor(i, 0xFF0080); break;//magenta
         }
       }
     }
   } 
+  else{
+    pixels.setBrightness(0);
+  }
   
   for (int i=1; i<=12; i++) {
     if (!digitalRead(i)) { // switch pressed!
       Serial.println(profilenum);
       switch(profilenum){//depending on profile
+        case 0 : settings(i); break;
         case 1 : playFusion(i); break;
         case 2 : VScode(i); break;
         case 3 : skrivaText(i); break;
-        case 10 : settings(i); break;
         //etc 10 ggr
       }
 
