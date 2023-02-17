@@ -141,11 +141,7 @@ void setup() {
 
   Serial.println("Adafruit Macropad with RP2040");
 
-  // start pixels!
-  pixels.begin();//macropad pixels
-  pixles.begin();//slider pixels
-  pixels.show(); // Initialize all pixels to 'off'
-  pixles.show();
+
 
   // Start OLED
   display.begin(0, true); // we dont use the i2c address but we will reset!
@@ -178,6 +174,14 @@ void setup() {
   display.setTextWrap(false);
   display.setTextColor(SH110X_WHITE, SH110X_BLACK); // white text, black background
 
+  // start pixels!
+  pixels.begin();//macropad pixels
+  if (!pixles.begin(DEFAULT_I2C_ADDR)){
+    Serial.println("seesaw pixels not found!");
+    while(1) delay(10);
+  }//slider pixels
+  pixels.show(); // Initialize all pixels to 'off'
+  pixles.show();
 }
 
 void loop() {
@@ -241,7 +245,7 @@ void loop() {
         pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
       }
       for(int i; i<pixles.numPixels();i++){//slider neopixels
-        pixles.setPixelColor(i, Wheel(((i * 256 / pixles.numPixels()) + j) & 255));
+        pixles.setPixelColor(i, Wheel(((1 * 256 / pixles.numPixels()) + j) & 255));
       }
       j++;
     
@@ -264,7 +268,7 @@ void loop() {
           case 11: pixels.setPixelColor(i, 0xFF0080); break;//magenta
         }
       }
-      for(int i=0; i< pixles.numPixels(); i++) {
+      for(int i=0; i< 4; i++) {
         switch(Clr){
           case 0: pixles.setPixelColor(i, 0xFF0000); break; //red
           case 1: pixles.setPixelColor(i, 0xff8000); break; //orange
@@ -307,7 +311,7 @@ void loop() {
     while(!digitalRead(i)){}
   }
 
-  // show neopixels, incredment swirl
+  // show neopixels
   pixels.show();
   pixles.show();
 
