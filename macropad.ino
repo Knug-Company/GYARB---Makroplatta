@@ -37,8 +37,16 @@ uint16_t lastSlideValue = 0;
 uint8_t j = 0; 
 bool i2c_found[128] = {false}; 
 
+void settings(int x){
+  switch(x){
+    case 1: RGBstate = !RGBstate; break;//RGB on off
+    case 2: RGBswirl = !RGBswirl; break;//RGB swirl 
+    case 3: if(RGBstate && !RGBswirl){Clr++ ;Clr = Clr % 12;} break;
+  }
+}
+
 void playFusion(int x){
-  Keyboard.begin();
+  Keyboard.begin();//Starting keyboard functionality
   switch(x){
     case 1: Keyboard.write('e'); break;//extrude
     case 2: Keyboard.write('d'); break;//dimension
@@ -52,26 +60,27 @@ void playFusion(int x){
     case 12:Keyboard.press(0x81); delay(10); Keyboard.press('i'); delay(10);break;     //custom shortcut, interference
   
   }
-  Keyboard.releaseAll();
-  Keyboard.end();
+  Keyboard.releaseAll();//releasing all pressed keys
+  Keyboard.end();//stopping keyboard functionality
 }
 
 void VScode(int x){
   Keyboard.begin();
   switch(x){
-    case 1: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10); Keyboard.press('p'); delay(10); Keyboard.releaseAll(); break; //search
-    case 2: Keyboard.press(0x82); delay(10); Keyboard.press(0x83); delay(10); Keyboard.press('u'); delay(10); Keyboard.releaseAll(); break;//upload
-    case 3: Keyboard.press(0x82); delay(10); Keyboard.press(0x83); delay(10); Keyboard.press('r'); delay(10); Keyboard.releaseAll(); break;
-    case 4: Keyboard.write(0x64); break;
-    case 5: Keyboard.write(0x65); break;
-    case 6: Keyboard.write(0x66); break;
-    case 7: Keyboard.write(0x67); break;
-    case 8: Keyboard.write(0x68); break;
-    case 9: Keyboard.write(0x69); break;
-    case 10: Keyboard.write(0x70); break;
-    case 11: Keyboard.write(0x71); break;
-    case 12: Keyboard.write(0x72); break;
+    case 1: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10); Keyboard.press('p'); delay(10); break;//search
+    case 2: Keyboard.press(0x82); delay(10); Keyboard.press(0x83); delay(10); Keyboard.press('u'); delay(10); break;//upload
+    case 3: Keyboard.press(0x82); delay(10); Keyboard.press(0x83); delay(10); Keyboard.press('r'); delay(10); break;//verify
+    case 4: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10); Keyboard.press('p'); delay(10); Keyboard.write('sketch'); Keyboard.press(KEY_KP_ENTER); delay(10); break;
+    case 5: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10); Keyboard.press('p'); delay(10); Keyboard.write('port'); Keyboard.press(KEY_KP_ENTER); delay(10); break;
+    case 6: Keyboard.press(0x83); delay(10); Keyboard.press(0x81); delay(10); Keyboard.press('p'); delay(10); Keyboard.write('rd con'); Keyboard.press(KEY_KP_ENTER); delay(10); break;
+    case 7: Keyboard.press(0x83); delay(10); Keyboard.press(0x82); delay(10); Keyboard.press(0xDA); delay(10); break;//cursor above
+    case 8: Keyboard.press(0x83); delay(10); Keyboard.press(0x82); delay(10); Keyboard.press(0xD9); delay(10); break;//cursor below
+    case 9: Keyboard.press(0x83); delay(10); Keyboard.press('u'); delay(10); break;//cursor undo
+    case 10: Keyboard.press(0x83); delay(10); Keyboard.write('k'); delay(10); Keyboard.write('2'); delay(10); break;//fold lvl2
+    case 11: Keyboard.press(0x83); delay(10); Keyboard.write('k'); delay(10); Keyboard.write('l'); delay(10); break;//fold all
+    case 12: Keyboard.press(0x83); delay(10); Keyboard.write('k'); delay(10); Keyboard.write('j'); delay(10); break;//unfold
   }
+  Keyboard.releaseAll();
   Keyboard.end();
 }
 
@@ -95,13 +104,6 @@ void skrivaText(int x){//för google docs
   Keyboard.end();
 }
 
-void settings(int x){
-  switch(x){
-    case 1: RGBstate = !RGBstate; break;//RGB on off
-    case 2: RGBswirl = !RGBswirl; break;//RGB swirl 
-    case 3: Clr++ ;Clr = Clr % 12; break;
-  }
-}
 
 
 void volume(int x, int y){
@@ -123,12 +125,16 @@ void docSize(int x, int y){
   Keyboard.begin();
   if (x - y >= 10){//document zoom increase
     Keyboard.press(0x83);
+    delay(10);
     Keyboard.press('+');
+    delay(10);
     Keyboard.releaseAll();
   }
   if (x - y <= -10){//document zoom decrease
     Keyboard.press(0x83);
+    delay(10);
     Keyboard.press('-');
+    delay(10);
     Keyboard.releaseAll();
   }
   Keyboard.end();*/
@@ -176,10 +182,7 @@ void setup() {
 
   // start pixels!
   pixels.begin();//macropad pixels
-  if (!pixles.begin(DEFAULT_I2C_ADDR)){
-    Serial.println("seesaw pixels not found!");
-    while(1) delay(10);
-  }//slider pixels
+  pixles.begin(DEFAULT_I2C_ADDR);//slider pixels
   pixels.show(); // Initialize all pixels to 'off'
   pixles.show();
 }
@@ -200,17 +203,20 @@ void loop() {
     Serial.print(" Direction:");
     Serial.println((int)(encoder.getDirection()));
     encoder_pos = newPos;
-    enc_rotation = (5 + (encoder_pos%5)) % 5;
+    enc_rotation = (5 + (encoder_pos%5)) % 5;//variable to cycle between the 5 profiles
 
   }
   display.setCursor(0, 8);
   display.print("Profile: ");
-  switch(enc_rotation){
+  switch(enc_rotation){//displaying the profile of current encoder position
     case 0: display.print("Settings");break;
     case 1: display.print("Fusion360");break;
     case 2: display.print("VSCode");break;
     case 3: display.print("text editor");break;
     case 4: display.print("Placeholder");break;
+  }
+  if(enc_rotation == profilenum){//marking the active profile
+    display.print(" *");
   }
 
   // read the potentiometer
@@ -238,20 +244,17 @@ void loop() {
   if(RGBstate == 1){
     pixels.setBrightness(brightness);
     pixles.setBrightness(brightness);
-    Serial.println("state" + String(RGBstate));
     if(RGBswirl == 1){//rgb cycle active
-      Serial.println("swirl" + String(RGBswirl));
       for(int i=0; i< pixels.numPixels(); i++) {//macropad neopixels
         pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
       }
       for(int i; i<pixles.numPixels();i++){//slider neopixels
-        pixles.setPixelColor(i, Wheel(((1 * 256 / pixles.numPixels()) + j) & 255));
+        pixles.setPixelColor(i, Wheel(((5 * 256 / pixles.numPixels()) + j) & 255));
       }
       j++;
     
     }
     if(RGBswirl == 0){
-      Serial.println("color" + String(Clr));
       for(int i=0; i< pixels.numPixels(); i++) {
         switch(Clr){
           case 0: pixels.setPixelColor(i, 0xFF0000); break; //red
@@ -303,15 +306,14 @@ void loop() {
       }
 
       pixels.setPixelColor(i-1, 0xFFFFFF);  // make white
-      // move the text into a 3x4 grid
-      display.setCursor(((i-1) % 3)*48, 32 + ((i-1)/3)*8);
-      display.print("KEY");
+      display.setCursor(((i-1) % 3)*48, 32 + ((i-1)/3)*8);// move the text into a 3x4 grid
+      display.print("KEY");//printing which key just got pressed
       display.print(i);
     }
     while(!digitalRead(i)){}
   }
 
-  // show neopixels
+  // let there be light !
   pixels.show();
   pixles.show();
 
